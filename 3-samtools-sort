@@ -11,3 +11,33 @@ samtools sort -o ct12c4.bam ct12c4.sam
 samtools sort -o ct12v2.bam ct12v2.sam
 samtools sort -o ct12v3.bam ct12v3.sam
 samtools sort -o ct12v4.bam ct12v4.sam
+
+
+#for one sample
+####################################################################
+#         Alabama Supercomputer Center - SLURM Epilog
+# Your username for this job is:              aubrxh001
+# Your account for this job is:               users
+# Your group for this job is:                 aubpathbio
+# Your job ID is:                             899960
+# Your job name is:                           samsortshSCRIPT
+# Your partition for this job is:             dmc
+# Your architecture for this job is:          ivy
+# Your job submit QOS is:                     express
+# Your job ran on nodes:                      dmc27
+# Your number of processors used:             1
+# Your job was submitted at:                  2022-11-30T17:11:44
+# Your job started at:                        2022-11-30T17:11:44
+# Your job ended at:                          2022-11-30T17:20:20
+# Your job elapsed time is:                   00:08:36
+# Your job dedicated time is:                 00:08:36
+# Your requested wall time is:                01:00:00
+# Your job cpu parallel efficiency is:        88.57%
+# Your requested memory is:                   4000M
+# Your max memory used:                       844764K
+# Your job memory efficiency is:              20.62%
+# Your job state is:                          COMPLETED
+# Your job exit code is:                      0:0
+# Your requested resource was:                cpu=1,mem=4000M,node=1
+# Your job commercial value is:               $ 0.0215
+####################################################################
