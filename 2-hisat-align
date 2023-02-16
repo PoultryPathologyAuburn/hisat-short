@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+#  load the module
+source /opt/asn/etc/asn-bash-profiles-special/modules.sh
+module load hisat2/2.0.5
+#
+
+hisat2 -p 4 --dta -x ncbi-index/galgal_ncbi -1 output_forward_paired_ct12c2.fq.gz -2 output_reverse_paired_ct12c2.fq.gz -S ct12c2.sam
+hisat2 -p 4 --dta -x ncbi-index/galgal_ncbi -1 output_forward_paired_ct12c3.fq.gz -2 output_reverse_paired_ct12c3.fq.gz -S ct12c3.sam
+hisat2 -p 4 --dta -x ncbi-index/galgal_ncbi -1 output_forward_paired_ct12c4.fq.gz -2 output_reverse_paired_ct12c4.fq.gz -S ct12c4.sam
+
+
+#for 1 sample
+####################################################################
+#         Alabama Supercomputer Center - SLURM Epilog
+# Your username for this job is:              aubrxh001
+# Your account for this job is:               users
+# Your group for this job is:                 aubpathbio
+# Your job ID is:                             899310
+# Your job name is:                           hisatal1shSCRIPT
+# Your partition for this job is:             gpu_ampere
+# Your architecture for this job is:          Unknown
+# Your job submit QOS is:                     express
+# Your job ran on nodes:                      dmc203
+# Your number of processors used:             4
+# Your job was submitted at:                  2022-11-29T16:24:45
+# Your job started at:                        2022-11-29T16:24:45
+# Your job ended at:                          2022-11-29T16:41:11
+# Your job elapsed time is:                   00:16:26
+# Your job dedicated time is:                 01:05:44
+# Your requested wall time is:                01:00:00
+# Your job cpu parallel efficiency is:        93.36%
+# Your requested memory is:                   4000M
+# Your max memory used:                       2318292K
+# Your job memory efficiency is:              56.60%
+# Your job state is:                          COMPLETED
+# Your job exit code is:                      0:0
+# Your requested resource was:                cpu=4,mem=4000M,node=1
+# Your job commercial value is:               $ 0.657333
+####################################################################
