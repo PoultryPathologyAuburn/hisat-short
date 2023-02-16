@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+#  load the module
+source /opt/asn/etc/asn-bash-profiles-special/modules.sh
+module load hisat2/2.0.5
+#
+
+hisat2_extract_splice_sites.py Gallus_gallus.bGalGal1.mat.broiler.GRCg7b.109.gtf >galgal_ens.ss
+hisat2_extract_exons.py Gallus_gallus.bGalGal1.mat.broiler.GRCg7b.109.gtf >galgal_ens.ex
+#both commands don't need a queue, done in less than a minute
+
+hisat2-build --ss galgal_ens.ss --exon galgal_ens.ex Gallus_gallus.bGalGal1.mat.broiler.GRCg7b.dna.toplevel.fa galgal_ens
+
+#run with only one core!
+
+####################################################################
+#         Alabama Supercomputer Center - SLURM Epilog
+# Your username for this job is:              aubrxh001
+# Your account for this job is:               users
+# Your group for this job is:                 aubpathbio
+# Your job ID is:                             897027
+# Your job name is:                           hisatindexshSCRIPT
+# Your partition for this job is:             dmc
+# Your architecture for this job is:          milan
+# Your job submit QOS is:                     bigmem
+# Your job ran on nodes:                      dmc86
+# Your number of processors used:             8
+# Your job was submitted at:                  2022-11-22T15:16:37
+# Your job started at:                        2022-11-22T15:17:05
+# Your job ended at:                          2022-11-22T16:11:02
+# Your job elapsed time is:                   00:53:57
+# Your job dedicated time is:                 07:11:36
+# Your requested wall time is:                04:00:00
+# Your job cpu parallel efficiency is:        12.05%
+# Your requested memory is:                   200000M
+# Your max memory used:                       50864384K
+# Your job memory efficiency is:              24.84%
+# Your job state is:                          COMPLETED
+# Your job exit code is:                      0:0
+# Your requested resource was:                billing=1,cpu=8,mem=200000M,node=1
+# Your job commercial value is:               $ 8.632
+####################################################################
