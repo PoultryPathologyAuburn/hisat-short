@@ -4,7 +4,7 @@
 source /opt/asn/etc/asn-bash-profiles-special/modules.sh
 module load hisat2/2.0.5
 #
-
+#this is using the ensemble genome
 hisat2_extract_splice_sites.py Gallus_gallus.bGalGal1.mat.broiler.GRCg7b.109.gtf >galgal_ens.ss
 hisat2_extract_exons.py Gallus_gallus.bGalGal1.mat.broiler.GRCg7b.109.gtf >galgal_ens.ex
 #both commands don't need a queue, done in less than a minute
