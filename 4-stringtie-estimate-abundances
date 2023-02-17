@@ -5,12 +5,12 @@ source /opt/asn/etc/asn-bash-profiles-special/modules.sh
 module load stringtie/2.2.1
 #
 #
-stringtie -e -B -G /ensemble-index/galgal_ens.gtf -o output/ct12c2.gtf ct12c2.bam
-stringtie -e -B -G /ensemble-index/galgal_ens.gtf -o output/ct12c3.gtf ct12c3.bam
-stringtie -e -B -G /ensemble-index/galgal_ens.gtf -o output/ct12c4.gtf ct12c4.bam
-stringtie -e -B -G /ensemble-index/galgal_ens.gtf -o output/ct12v2.gtf ct12v2.bam
-stringtie -e -B -G /ensemble-index/galgal_ens.gtf -o output/ct12v3.gtf ct12v3.bam
-stringtie -e -B -G /ensemble-index/galgal_ens.gtf -o output/ct12v4.gtf ct12v4.bam
+stringtie -e -B -G ncbi-index/galgal_ncbi.gtf -o output/ct12c2/ct12c2.gtf ct12c2.bam
+stringtie -e -B -G ncbi-index/galgal_ncbi.gtf -o output/ct12c3/ct12c3.gtf ct12c3.bam
+stringtie -e -B -G ncbi-index/galgal_ncbi.gtf -o output/ct12c4/ct12c4.gtf ct12c4.bam
+stringtie -e -B -G ncbi-index/galgal_ncbi.gtf -o output/ct12v2/ct12v2.gtf ct12v2.bam
+stringtie -e -B -G ncbi-index/galgal_ncbi.gtf -o output/ct12v3/ct12v3.gtf ct12v3.bam
+stringtie -e -B -G ncbi-index/galgal_ncbi.gtf -o output/ct12v4/ct12v4.gtf ct12v4.bam
 
 #for 1 sample
 ####################################################################
