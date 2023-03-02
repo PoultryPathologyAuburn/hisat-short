@@ -16,7 +16,35 @@ do
         cd ..
 done
 
-#run in small queue, 4 cpu, 1gb memory, 5 h, for 3 samples
+#for 3 samples:
+####################################################################
+#         Alabama Supercomputer Center - SLURM Epilog
+# Your username for this job is:              aubrxh001
+# Your account for this job is:               users
+# Your group for this job is:                 aubpathbio
+# Your job ID is:                             954469
+# Your job name is:                           taxshSCRIPT
+# Your partition for this job is:             dmc
+# Your architecture for this job is:          ivy
+# Your job submit QOS is:                     small
+# Your job ran on nodes:                      dmc22
+# Your number of processors used:             4
+# Your job was submitted at:                  2023-03-02T14:36:20
+# Your job started at:                        2023-03-02T14:36:26
+# Your job ended at:                          2023-03-02T15:38:47
+# Your job elapsed time is:                   01:02:21
+# Your job dedicated time is:                 04:09:24
+# Your requested wall time is:                05:00:00
+# Your job cpu parallel efficiency is:        51.48%
+# Your requested memory is:                   1000M
+# Your max memory used:                       215428K
+# Your job memory efficiency is:              21.04%
+# Your job state is:                          COMPLETED
+# Your job exit code is:                      0:0
+# Your requested resource was:                cpu=4,mem=1000M,node=1
+# Your job commercial value is:               $ 2.494
+####################################################################
+
 
 
 ##########################
