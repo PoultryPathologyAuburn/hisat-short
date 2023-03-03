@@ -54,21 +54,12 @@ done
 # delete raw files and move Trimmomatic files to main folder
 # folders are named according to sample names, capital letter for each group and number for the sample in each group; same for letters and numbers in filenames
 
-for i in ct48c ct48v hg48c hg48v sp48c sp48v tr48c tr48v
+for i in ct12c2 ct12c3 ct12c4 ct12v2 ct12v3 ct12v4 ct24c1 ct24c3 ct24c4 ct24v1 ct24v2 ct24v3 ct48c1 ct48c5 ct48c6 ct48v4 ct48v5 ct48v6 hg12c3 hg12c4 hg12c5 hg12v2 hg12v4 hg12v5 hg24c2 hg24c4 hg24c5 hg24v1 hg24v4 hg24v6 hg48c2 hg48c3 hg48c4 hg48v2 hg48v3 hg48v7 sp12c1 sp12c4 sp24c1 sp24c2 sp24v1 sp24v2 sp24v4 sp48v3 tr12c1 tr12c4 tr12c5 tr12v2 tr12v4 tr24v4 tr24v7 tr48c2 tr48c5 tr48v2 tr48v3 tr48v4 
 do
-       for j in {1,2,3,4,5,6,7}
-       do
-       if [ -e ${i}${j} ]
-       then
-
-               cd ${i}${j}
-               #rm ${i}${j}_1.fq.gz
-               #rm ${i}${j}_2.fq.gz
-               mv output_reverse_paired_${i}${j}.fq.gz ..
-               mv output_forward_paired_${i}${j}.fq.gz ..
+               cd ${i}
+               #rm ${i}_1.fq.gz
+               #rm ${i}_2.fq.gz
+               mv output_reverse_paired_${i}.fq.gz ..
+               mv output_forward_paired_${i}.fq.gz ..
                cd ..
-       fi
-       done
 done
-
-#run in small queue, 4 cpu, 1gb memory, 5 h, for 3 sample
