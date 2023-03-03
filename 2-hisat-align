@@ -4,11 +4,10 @@
 source /opt/asn/etc/asn-bash-profiles-special/modules.sh
 module load hisat2/2.0.5
 #
-
-hisat2 -p 4 --dta -x ncbi-index/galgal_ncbi -1 output_forward_paired_ct12c2.fq.gz -2 output_reverse_paired_ct12c2.fq.gz -S ct12c2.sam
-hisat2 -p 4 --dta -x ncbi-index/galgal_ncbi -1 output_forward_paired_ct12c3.fq.gz -2 output_reverse_paired_ct12c3.fq.gz -S ct12c3.sam
-hisat2 -p 4 --dta -x ncbi-index/galgal_ncbi -1 output_forward_paired_ct12c4.fq.gz -2 output_reverse_paired_ct12c4.fq.gz -S ct12c4.sam
-
+for i in ct12c2 ct12c3 ct12c4 ct12v2 ct12v3 ct12v4 ct24c1 ct24c3 ct24c4 ct24v1 ct24v2 ct24v3 ct48c1 ct48c5 ct48c6 ct48v4 ct48v5 ct48v6 hg12c3 hg12c4 hg12c5 hg12v2 hg12v4 hg12v5 hg24c2 hg24c4 hg24c5 hg24v1 hg24v4 hg24v6 hg48c2 hg48c3 hg48c4 hg48v2 hg48v3 hg48v7 sp12c1 sp12c4 sp24c1 sp24c2 sp24v1 sp24v2 sp24v4 sp48v3 tr12c1 tr12c4 tr12c5 tr12v2 tr12v4 tr24v4 tr24v7 tr48c2 tr48c5 tr48v2 tr48v3 tr48v4 
+do
+hisat2 -p 4 --dta -x ncbi-index/galgal_ncbi -1 output_forward_paired_{i}.fq.gz -2 output_reverse_paired_{i}.fq.gz -S {i}.sam
+done
 
 #for 1 sample
 ####################################################################
