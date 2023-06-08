@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#load the module
+
+source /opt/asn/etc/asn-bash-profiles-special/modules.sh
+module load anaconda/3-2019.10
+module load samtools/1.13
+
+for i in A_1
+do
+samtools sort -o ${i}_sorted.bam -n ${i}.bam
+done
+
+for one sample
+####################################################################
+#         Alabama Supercomputer Center - SLURM Epilog
+# Your username for this job is:              aubrxh001
+# Your account for this job is:               users
+# Your group for this job is:                 aubpathbio
+# Your job ID is:                             1303855
+# Your job name is:                           taxAshSCRIPT
+# Your partition for this job is:             dmc
+# Your architecture for this job is:          ivy
+# Your job submit QOS is:                     express
+# Your job ran on nodes:                      dmc13
+# Your number of processors used:             4
+# Your job was submitted at:                  2023-06-08T07:26:51
+# Your job started at:                        2023-06-08T07:26:52
+# Your job ended at:                          2023-06-08T07:38:44
+# Your job elapsed time is:                   00:11:52
+# Your job dedicated time is:                 00:47:28
+# Your requested wall time is:                04:00:00
+# Your job cpu parallel efficiency is:        24.30%
+# Your requested memory is:                   4000M
+# Your max memory used:                       905252K
+# Your job memory efficiency is:              22.10%
+# Your job state is:                          COMPLETED
+# Your job exit code is:                      0:0
+# Your requested resource was:                cpu=4,mem=4000M,node=1
+# Your job commercial value is:               $ 0.474667
+####################################################################
+
