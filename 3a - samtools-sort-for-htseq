@@ -12,32 +12,33 @@ samtools sort -o ${i}_sorted.bam -n ${i}.sam
 done
 
 for one sample
-####################################################################
+#####################################################################
 #         Alabama Supercomputer Center - SLURM Epilog
 # Your username for this job is:              aubrxh001
 # Your account for this job is:               users
 # Your group for this job is:                 aubpathbio
-# Your job ID is:                             1304077
-# Your job name is:                           taxAshSCRIPT
+# Your job ID is:                             1306780
+# Your job name is:                           taxAnsortshSCRIPT
 # Your partition for this job is:             dmc
 # Your architecture for this job is:          ivy
 # Your job submit QOS is:                     small
 # Your job ran on nodes:                      dmc10
 # Your number of processors used:             1
-# Your job was submitted at:                  2023-06-08T07:52:12
-# Your job started at:                        2023-06-08T07:52:13
-# Your job ended at:                          2023-06-08T08:07:48
-# Your job elapsed time is:                   00:15:35
-# Your job dedicated time is:                 00:15:35
+# Your job was submitted at:                  2023-06-08T12:43:07
+# Your job started at:                        2023-06-08T12:43:12
+# Your job ended at:                          2023-06-08T13:04:02
+# Your job elapsed time is:                   00:20:50
+# Your job dedicated time is:                 00:20:50
 # Your requested wall time is:                01:00:00
-# Your job cpu parallel efficiency is:        98.07%
+# Your job cpu parallel efficiency is:        93.84%
 # Your requested memory is:                   2000M
-# Your max memory used:                       886236K
-# Your job memory efficiency is:              43.27%
+# Your max memory used:                       887036K
+# Your job memory efficiency is:              43.31%
 # Your job state is:                          COMPLETED
 # Your job exit code is:                      0:0
 # Your requested resource was:                cpu=1,mem=2000M,node=1
-# Your job commercial value is:               $ 0.0389583
+# Your job commercial value is:               $ 0.0520833
 ####################################################################
+
 
 
