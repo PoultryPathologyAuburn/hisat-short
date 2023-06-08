@@ -1,0 +1,41 @@
+#!/bin/bash
+
+#load the module
+
+source /opt/asn/etc/asn-bash-profiles-special/modules.sh
+module load anaconda/3-2019.10
+module load samtools/1.13
+
+for i in A_1
+do
+               python -m HTSeq.scripts.count --stranded=no -r name -f bam --type=exon ${i}_sorted.bam ens-index/galgal_ens.gtf > count_sorted_${i}.txt
+done
+
+for one sample
+####################################################################
+#         Alabama Supercomputer Center - SLURM Epilog
+# Your username for this job is:              aubrxh001
+# Your account for this job is:               users
+# Your group for this job is:                 aubpathbio
+# Your job ID is:                             1305348
+# Your job name is:                           taxAhtshSCRIPT
+# Your partition for this job is:             dmc
+# Your architecture for this job is:          ivy
+# Your job submit QOS is:                     small
+# Your job ran on nodes:                      dmc26
+# Your number of processors used:             1
+# Your job was submitted at:                  2023-06-08T10:07:30
+# Your job started at:                        2023-06-08T10:07:54
+# Your job ended at:                          2023-06-08T11:21:53
+# Your job elapsed time is:                   01:13:59
+# Your job dedicated time is:                 01:13:59
+# Your requested wall time is:                12:00:00
+# Your job cpu parallel efficiency is:        99.46%
+# Your requested memory is:                   2000M
+# Your max memory used:                       137692K
+# Your job memory efficiency is:              6.72%
+# Your job state is:                          COMPLETED
+# Your job exit code is:                      0:0
+# Your requested resource was:                cpu=1,mem=2000M,node=1
+# Your job commercial value is:               $ 0.184958
+####################################################################
