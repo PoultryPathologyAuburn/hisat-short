@@ -77,3 +77,38 @@ for (i in 1:5) {
     }
   }
 }
+
+#########################################################################################################
+Jannis
+#########################################################################################################
+
+for (i in c('hg', 'tr')) {
+  for (j in c(12, 24, 48)) {
+    check_temp <- pheno_data[pheno_data$organ == i & pheno_data$hpi == j,]
+    if (nrow(check_temp) > 0) {
+      print(paste(i, j))
+      #formulate condition, prepare filtered, check if the right samples are in it
+      bed <- paste0('organ == "', i, '" & hpi == ', j)
+      aens_filt_temp = subset(aens_filt, bed, genomesubset=FALSE)
+      sampleNames(aens_filt_temp)
+      
+      #calculate p and 1 values, for pairwise with fold change
+      results_genes = stattest(aens_filt_temp, feature="gene", covariate="group", getFC=TRUE, meas="FPKM")
+      
+      #create list with gene ids and gene names from the ballgown object and remove duplicates
+      geneIds=data.frame(ballgown::geneIDs(aens_filt_temp), eneNames=ballgown::geneNames(aens_filt_temp))
+      geneIds <- base::unique(geneIds)
+      
+      #add gene names to the results
+      results_genes <- merge(results_genes, geneIds, by.x = 'id', by.y = 1)
+      
+      #add gene information to gene results
+      results_genes <- merge(results_genes, annots, by.x = 'eneNames', by.y="SYMBOL")
+      
+      #filter for q value and write csv
+      results_genes_sig <- results_genes[results_genes$qval < 0.1,]
+      dateiname <- paste('j-ens', i, '-', j, '.csv')
+      write.csv(results_genes_sig, file = dateiname)
+    }
+  }
+}
