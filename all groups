@@ -27,7 +27,7 @@ aens_filt = subset(aens,"rowVars(texpr(aens)) >1",genomesubset=TRUE)
 #all groups#
 ############
 
-#calculate p and 1 values, for pairwise with fold change
+#calculate p and 1 values
 results_genes = stattest(aens_filt, feature="gene", covariate="groupno", getFC=FALSE, meas="FPKM")
 
 #create list with gene ids and gene names from the ballgown object and remove duplicates
