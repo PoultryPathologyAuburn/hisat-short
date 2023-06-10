@@ -1,0 +1,47 @@
+library(ballgown)
+library(RSkittleBrewer)
+library(genefilter)
+library(dplyr)
+library(devtools)
+library(org.Gg.eg.db)
+
+#this folder contains the folder 'output', which in turn contains the folders for all samples
+setwd('C:/Users/ruedi/Box/Documents/jack/ballgownoutputs/output-A-ens')
+
+#read metadata
+pheno_data = read.csv('phenodata.csv')
+pheno_data = pheno_data[order(pheno_data$ids),]
+
+#create ballgown object
+aens = ballgown(dataDir = 'output', samplePattern = 'a-ens_', pData=pheno_data)
+
+#Filter to remove low-abundance genes
+aens_filt = subset(aens,"rowVars(texpr(aens)) >1",genomesubset=TRUE)
+
+## do it for all groups
+#Identify genes that show statistically significant differences between groups, can be corrected for other factors
+results_genes = stattest(aens_filt, feature="gene", covariate="groupno", getFC=FALSE, meas="FPKM")
+
+#create list with gene ids and gene names from the ballgown object and remove duplicates
+geneIds=data.frame(ballgown::geneIDs(aens_filt_temp), eneNames=ballgown::geneNames(aens_filt_temp))
+geneIds <- base::unique(geneIds)
+
+#add gene names to the results
+results_genes <- merge(results_genes, geneIds, by.x = 'id', by.y = 1)
+
+#create the table with the chickengene information
+uniKeys <- keys(org.Gg.eg.db, keytype="ENTREZID")
+cols <- c("SYMBOL", "GENENAME")
+annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
+
+#add gene information to gene results
+results_genes <- merge(results_genes, annots, by.x = 'eneNames', by.y="SYMBOL")
+
+#Subset genes with qval lower than 0.05
+results_genes_sig <- results_genes[results_genes$qval < 0.05,]
+dateiname <- 'a-ens_all.csv'
+write.csv(results_genes, file = dateiname)
+
+##########
+#pairwise#
+##########
