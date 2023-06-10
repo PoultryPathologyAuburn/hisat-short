@@ -5,6 +5,11 @@ library(dplyr)
 library(devtools)
 library(org.Gg.eg.db)
 
+#create the table with the chickengene information
+uniKeys <- keys(org.Gg.eg.db, keytype="ENTREZID")
+cols <- c("SYMBOL", "GENENAME")
+annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
+
 #this folder contains the folder 'output', which in turn contains the folders for all samples
 setwd('C:/Users/ruedi/Box/Documents/jack/ballgownoutputs/output-A-ens')
 
@@ -18,8 +23,11 @@ aens = ballgown(dataDir = 'output', samplePattern = 'a-ens_', pData=pheno_data)
 #Filter to remove low-abundance genes
 aens_filt = subset(aens,"rowVars(texpr(aens)) >1",genomesubset=TRUE)
 
-## do it for all groups
-#Identify genes that show statistically significant differences between groups, can be corrected for other factors
+############
+#all groups#
+############
+
+#calculate p and 1 values, for pairwise with fold change
 results_genes = stattest(aens_filt, feature="gene", covariate="groupno", getFC=FALSE, meas="FPKM")
 
 #create list with gene ids and gene names from the ballgown object and remove duplicates
@@ -28,11 +36,6 @@ geneIds <- base::unique(geneIds)
 
 #add gene names to the results
 results_genes <- merge(results_genes, geneIds, by.x = 'id', by.y = 1)
-
-#create the table with the chickengene information
-uniKeys <- keys(org.Gg.eg.db, keytype="ENTREZID")
-cols <- c("SYMBOL", "GENENAME")
-annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
 
 #add gene information to gene results
 results_genes <- merge(results_genes, annots, by.x = 'eneNames', by.y="SYMBOL")
@@ -45,3 +48,32 @@ write.csv(results_genes, file = dateiname)
 ##########
 #pairwise#
 ##########
+## do it pairwise
+for (i in 1:5) {
+  for (j in 2:6) {
+    if (i < j) {
+      #formulate condition, prepare filtered, check if the right samples are in it
+      bed <- paste('groupno == ', i, ' | groupno == ', j)
+      aens_filt_temp = subset(aens_filt, bed, genomesubset=FALSE)
+      #sampleNames(aens_filt_temp)
+
+      #calculate p and 1 values, for pairwise with fold change
+      results_genes = stattest(aens_filt_temp, feature="gene", covariate="groupno", getFC=TRUE, meas="FPKM")
+
+      #create list with gene ids and gene names from the ballgown object and remove duplicates
+      geneIds=data.frame(ballgown::geneIDs(aens_filt_temp), eneNames=ballgown::geneNames(aens_filt_temp))
+      geneIds <- base::unique(geneIds)
+
+      #add gene names to the results
+      results_genes <- merge(results_genes, geneIds, by.x = 'id', by.y = 1)
+
+      #add gene information to gene results
+      results_genes <- merge(results_genes, annots, by.x = 'eneNames', by.y="SYMBOL")
+      
+      #filter for q value and write csv
+      results_genes_sig <- results_genes[results_genes$qval < 0.05,]
+      dateiname <- paste('a-ens', i, '-', j)
+      write.csv(results_genes, file = dateiname)
+    }
+  }
+}
