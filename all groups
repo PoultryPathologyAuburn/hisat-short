@@ -43,7 +43,7 @@ results_genes <- merge(results_genes, annots, by.x = 'eneNames', by.y="SYMBOL")
 #Subset genes with qval lower than 0.05
 results_genes_sig <- results_genes[results_genes$qval < 0.05,]
 dateiname <- 'a-ens_all.csv'
-write.csv(results_genes, file = dateiname)
+write.csv(results_genes_sig, file = dateiname)
 
 ##########
 #pairwise#
@@ -72,8 +72,8 @@ for (i in 1:5) {
       
       #filter for q value and write csv
       results_genes_sig <- results_genes[results_genes$qval < 0.05,]
-      dateiname <- paste('a-ens', i, '-', j)
-      write.csv(results_genes, file = dateiname)
+      dateiname <- paste('a-ens', i, '-', j, '.csv')
+      write.csv(results_genes_sig, file = dateiname)
     }
   }
 }
