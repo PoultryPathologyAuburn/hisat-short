@@ -248,3 +248,67 @@ results_genes <- merge(de_genes, annots, by.x = 'gene', by.y = 'SYMBOL')
 results_genes_sig <- results_genes[results_genes$qValue < 0.05,]
 dateiname <- 'a-ens-all.csv'
 write.csv(results_genes_sig, file = dateiname)
+
+######################
+#alternative approach for multifactorial experiments, but does not allow interactions etc.
+######################
+
+#create annotations
+uniKeys <- keys(org.Gg.eg.db, keytype="ENTREZID")
+cols <- c("SYMBOL", "GENENAME")
+annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
+
+# set path to files and list filenames
+path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ncbi/A"
+setwd(path)
+files <- list.files(path,".txt", full.names = T)
+
+# making a list of data frames with row and column names while removing last 
+# five lines from HTSeq that contains the features and ambiguous read infromation
+dfList <- lapply(files, function(x) {
+  read.csv(x, nrows = length(count.fields(x))-5, sep = "\t", header = F, 
+           row.names = 1, col.names = c("genes",tools::file_path_sans_ext(basename(x))))})
+
+# combining all the dataframes into single dataframe
+all.data <- bind_cols(dfList)
+
+## clean the column names from e.g. count_sorted_B_2 to B2
+names(all.data) = gsub(pattern = "count_sorted_", replacement = "", 
+                       x = names(all.data))
+names(all.data) = gsub(pattern = "_", replacement = "", x = names(all.data))
+
+#make genenames a column, remove the _1 and _2, add values in rows with same gene
+all.data$gene <- rownames(all.data)
+all.data$gene <- substr(all.data$gene, 1, nchar(all.data$gene)-2)
+all.data <- aggregate(. ~ gene, all.data, sum)
+row.names(all.data) <- all.data$gene
+all.data <- subset(all.data, select = -c(gene))
+
+#make group design
+target <- read.csv('phenodata.csv')
+group <- factor(paste(target$cocci_vac ,target$ST_vac ,sep="."))
+
+design <- model.matrix(~0+group)
+colnames(design) <- levels(group)
+
+#create DEGElist object
+y <- DGEList(counts = all.data, group = group)
+
+#check y
+y$samples
+levels(y$samples$group)
+
+# filter lowly expressed genes
+keep <- filterByExpr(y)
+y <- y[keep,,keep.lib.sizes=FALSE]
+sum_keep <- summary(keep)
+
+# normalization
+y <- calcNormFactors(y)
+
+#estimate dispersion
+y <- estimateDisp(y,design)
+
+#fit the model
+fit <- glmQLFit(y, design)
+
