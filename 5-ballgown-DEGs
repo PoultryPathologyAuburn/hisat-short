@@ -5,32 +5,85 @@ library(dplyr)
 library(devtools)
 library(org.Gg.eg.db)
 
-#this folder contains the folder 'output', which in turn contains the folders for all samples
-setwd("/Box/neu/rnaseq/Hisat index/NCBI-genome-based")
-
-#read metadata in; this is a csv file; first column 'id' with sample names, second column 'group' with group names 
-pheno_data = read.csv("phenodata.csv") #
-
-#create ballgown object
-ct12 = ballgown(dataDir = 'output', samplePattern = 'ct12', pData=pheno_data)
-
-#Filter to remove low-abundance genes
-ct12_filt = subset(ct12,"rowVars(texpr(ct12)) >1",genomesubset=TRUE)
-
-#Identify genes that show statistically significant differences between groups, can be corrected for other factors
-results_genes = stattest(ct12_filt, feature="gene", covariate="group", getFC=FALSE, meas="FPKM")
-
-#create list with gene ids and gene names from the ballgown object and remove duplicates
-geneIds=data.frame(ballgown::geneIDs(ct12_filt), eneNames=ballgown::geneNames(ct12_filt))
-geneIds <- base::unique(geneIds)
-
-#add gene names to the results
-results_genes <- merge(results_genes, geneIds, by.x = 'id', by.y = 1)
-
 #create the table with the chickengene information
 uniKeys <- keys(org.Gg.eg.db, keytype="ENTREZID")
 cols <- c("SYMBOL", "GENENAME")
 annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
 
-#add gene information to gene results
-results_genes <- merge(results_genes, annots, by.x = 'eneNames', by.y="SYMBOL")
+#this folder contains the folder 'output', which in turn contains the folders for all samples
+setwd('C:/Users/ruedi/Box/Documents/jack/ballgownoutputs/output-J-ens')
+
+#read metadata
+pheno_data = read.csv('phenodata.csv')
+pheno_data = pheno_data[order(pheno_data$ids),]
+
+#create ballgown object
+ancbi = ballgown(dataDir = 'output', samplePattern = 'j-ens', pData=pheno_data)
+
+#Filter to remove low-abundance genes
+ancbi_filt = subset(ancbi,"rowVars(texpr(ancbi)) >1",genomesubset=TRUE)
+
+###################################
+#all groups separate for hg and tr#
+###################################
+
+for (i in c('hg', 'tr')) {
+    #formulate condition, prepare filtered, check if the right samples are in it
+    bed <- paste0('organ == "', i, '"')
+    ancbi_filt_temp = subset(ancbi_filt, bed, genomesubset=FALSE)
+    sampleNames(ancbi_filt_temp)
+    
+    #calculate p and 1 values, for pairwise with fold change
+    results_genes = stattest(ancbi_filt_temp, feature="gene", covariate="group", getFC=TRUE, meas="FPKM")
+    
+    #create list with gene ids and gene names from the ballgown object and remove duplicates
+    geneIds=data.frame(ballgown::geneIDs(ancbi_filt_temp), eneNames=ballgown::geneNames(ancbi_filt_temp))
+    geneIds <- base::unique(geneIds)
+    
+    #add gene names to the results
+    results_genes <- merge(results_genes, geneIds, by.x = 'id', by.y = 1)
+    
+    #add gene information to gene results
+    results_genes <- merge(results_genes, annots, by.x = 'eneNames', by.y="SYMBOL")
+    
+    #filter for q value and write csv
+    results_genes_sig <- results_genes[results_genes$qval < 0.1,]
+    dateiname <- paste('j-ens-tr.csv')
+    write.csv(results_genes_sig, file = dateiname)
+}
+
+
+###############
+#pairwise only#
+###############
+## do it pairwise
+for (i in c('hg', 'tr')) {
+  for (j in c(12, 24, 48)) {
+    check_temp <- pheno_data[pheno_data$organ == i & pheno_data$hpi == j,]
+    if (nrow(check_temp) > 0) {
+      print(paste(i, j))
+      #formulate condition, prepare filtered, check if the right samples are in it
+      bed <- paste0('organ == "', i, '" & hpi == ', j)
+      ancbi_filt_temp = subset(ancbi_filt, bed, genomesubset=FALSE)
+      sampleNames(ancbi_filt_temp)
+      
+      #calculate p and 1 values, for pairwise with fold change
+      results_genes = stattest(ancbi_filt_temp, feature="gene", covariate="group", getFC=TRUE, meas="FPKM")
+      
+      #create list with gene ids and gene names from the ballgown object and remove duplicates
+      geneIds=data.frame(ballgown::geneIDs(ancbi_filt_temp), eneNames=ballgown::geneNames(ancbi_filt_temp))
+      geneIds <- base::unique(geneIds)
+      
+      #add gene names to the results
+      results_genes <- merge(results_genes, geneIds, by.x = 'id', by.y = 1)
+      
+      #add gene information to gene results
+      results_genes <- merge(results_genes, annots, by.x = 'eneNames', by.y="SYMBOL")
+      
+      #filter for q value and write csv
+      results_genes_sig <- results_genes[results_genes$qval < 0.1,]
+      dateiname <- paste('j-ncbi', i, '-', j, '.csv')
+      write.csv(results_genes_sig, file = dateiname)
+    }
+  }
+}
