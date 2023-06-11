@@ -1,0 +1,250 @@
+# libraries
+library(dplyr)
+library(goseq)
+library(BiasedUrn)
+library(geneLenDataBase)
+library(limma)
+library(edgeR)
+library(AnnotationDbi)
+library(stats4)
+library(BiocGenerics)
+library(org.Gg.eg.db)
+library(tibble)
+library(ggpubr)
+library(BiocManager)
+library(ggplot2)
+library(qvalue)
+library(gdata)
+
+##############
+#ncbi dataset#
+##############
+
+#create annotations
+uniKeys <- keys(org.Gg.eg.db, keytype="ENTREZID")
+cols <- c("SYMBOL", "GENENAME")
+annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
+
+# set path to files and list filenames
+path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ncbi/A"
+setwd(path)
+files <- list.files(path,".txt", full.names = T)
+
+# making a list of data frames with row and column names while removing last 
+# five lines from HTSeq that contains the features and ambiguous read infromation
+dfList <- lapply(files, function(x) {
+  read.csv(x, nrows = length(count.fields(x))-5, sep = "\t", header = F, 
+           row.names = 1, col.names = c("genes",tools::file_path_sans_ext(basename(x))))})
+
+# combining all the dataframes into single dataframe
+all.data <- bind_cols(dfList)
+
+## clean the column names from e.g. count_sorted_B_2 to B2
+names(all.data) = gsub(pattern = "count_sorted_", replacement = "", 
+                     x = names(all.data))
+names(all.data) = gsub(pattern = "_", replacement = "", x = names(all.data))
+
+#make genenames a column, remove the _1 and _2, add values in rows with same gene
+all.data$gene <- rownames(all.data)
+all.data$gene <- substr(all.data$gene, 1, nchar(all.data$gene)-2)
+all.data <- aggregate(. ~ gene, all.data, sum)
+row.names(all.data) <- all.data$gene
+all.data <- subset(all.data, select = -c(gene))
+
+#make group design
+info<-rep("A", 10)
+info<-append(info,(rep("B", 10)))
+info<-append(info,(rep("C", 10)))
+info<-append(info,(rep("D", 10)))
+info<-append(info,(rep("E", 10)))
+info<-append(info,(rep("F", 10)))
+
+group <- factor(info)
+
+#create DEGElist object
+y <- DGEList(counts = all.data, group = group)
+
+#check y
+y$samples
+levels(y$samples$group)
+
+# filter lowly expressed genes
+keep <- filterByExpr(y)
+y <- y[keep,,keep.lib.sizes=FALSE]
+sum_keep <- summary(keep)
+
+# normalization
+y <- calcNormFactors(y)
+
+#create the design matrix
+design <- model.matrix(~group, data=y$samples)
+
+#estimate dispersion
+y <- estimateDisp(y,design)
+
+#fit the general linear model
+fit <- glmQLFit(y, design)
+qlf <- glmQLFTest(fit, coef=2:6)
+
+#create a list of all expressed genes
+results <- topTags(qlf, n = 20000)
+
+# Extract the p-values from the 'toptags' result
+p_values <- results$table$PValue
+
+# Calculate q-values using the 'qvalue' function
+q_values <- qvalue(p_values)$qvalues
+
+# Add q-values to the 'toptags' result
+results$table$qValue <- q_values
+
+#export the table with all that information
+de_genes <- results$table
+
+#merge with gene data
+de_genes$gene <- rownames(de_genes)
+results_genes <- merge(de_genes, annots, by.x = 'gene', by.y = 'SYMBOL')
+
+#filter for q value and write csv
+results_genes_sig <- results_genes[results_genes$qValue < 0.05,]
+dateiname <- 'a-ncbi-all.csv'
+write.csv(results_genes_sig, file = dateiname)
+
+
+##################
+#ensemble dataset#
+##################
+rm(list = ls())
+
+#create the symbol list: load gtf file
+path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ens"
+setwd(path)
+genlist <- read.delim('galgal_ens.gtf', sep = '\t', header = FALSE)
+
+#create the symbol list: select genes
+genlist <- genlist[genlist$V3 == 'gene',]
+
+#create the symbol list: select v9 with the relevant data and an id
+genlist$id <- row.names(genlist)
+genlist <- genlist[c(9, 10)]
+
+#create the symbol list: split with ; as separator
+splitvalue <- strsplit(genlist$V9, ';')
+
+#create the symbol list: assemble the new dataframe
+genlist <- data.frame(ID = rep(genlist$id, sapply(splitvalue, length)), Values = unlist(splitvalue))
+
+#create the symbol list: filter the rows with gene names or the ens gene ids and merge to one table
+filtered_data <- genlist[startsWith(genlist$Values, "gene_n", trim = TRUE), ]
+filtered_data_2 <- genlist[startsWith(genlist$Values, "gene_id"), ]
+genlist <- merge(filtered_data, filtered_data_2, by.x = 'ID', by.y = 'ID')
+
+#create the symbol list: remove unnecessary text
+genlist$Values.x <- gsub("gene_name","",as.character(genlist$Values.x))
+genlist$Values.y <- gsub("gene_id","",as.character(genlist$Values.y))
+genlist$Values.y <- trimws(genlist$Values.y)
+genlist$Values.x <- trimws(genlist$Values.x)
+
+
+#clean up
+rm(filtered_data)
+rm(filtered_data_2)
+rm(splitvalue)
+
+#create annotations
+uniKeys <- keys(org.Gg.eg.db, keytype="ENTREZID")
+cols <- c("SYMBOL", "GENENAME")
+annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
+
+# set path to files and list filenames
+path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ens/A"
+setwd(path)
+files <- list.files(path,".txt", full.names = T)
+
+# making a list of data frames with row and column names while removing last 
+# five lines from HTSeq that contains the features and ambiguous read infromation
+dfList <- lapply(files, function(x) {
+  read.csv(x, nrows = length(count.fields(x))-5, sep = "\t", header = F, 
+           row.names = 1, col.names = c("genes",tools::file_path_sans_ext(basename(x))))})
+
+# combining all the dataframes into single dataframe
+all.data <- bind_cols(dfList)
+
+## clean the column names from e.g. count_sorted_B_2 to B2
+names(all.data) = gsub(pattern = "count_sorted_", replacement = "", 
+                       x = names(all.data))
+names(all.data) = gsub(pattern = "_", replacement = "", x = names(all.data))
+
+#make genenames a column, replace with genenames if approp.
+all.data$gene <- rownames(all.data)
+all.data <- merge(all.data, genlist, by.x = 'gene', by.y = 'Values.y', all.x = TRUE)
+
+for (i in 1:nrow(all.data)) {
+  if (is.na(all.data[i,63])) {
+    all.data[i,63] <- all.data[i,1]
+  }
+}
+
+all.data <- subset(all.data, select = -c(gene, ID))
+all.data <- aggregate(. ~ Values.x, all.data, sum)
+row.names(all.data) <- all.data$Values.x
+all.data <- subset(all.data, select = -c(Values.x))
+
+#make group design
+info<-rep("A", 10)
+info<-append(info,(rep("B", 10)))
+info<-append(info,(rep("C", 10)))
+info<-append(info,(rep("D", 10)))
+info<-append(info,(rep("E", 10)))
+info<-append(info,(rep("F", 10)))
+
+group <- factor(info)
+
+#create DEGElist object
+y <- DGEList(counts = all.data, group = group)
+
+#check y
+y$samples
+levels(y$samples$group)
+
+# filter lowly expressed genes
+keep <- filterByExpr(y)
+y <- y[keep,,keep.lib.sizes=FALSE]
+sum_keep <- summary(keep)
+
+# normalization
+y <- calcNormFactors(y)
+
+#create the design matrix
+design <- model.matrix(~group, data=y$samples)
+
+#estimate dispersion
+y <- estimateDisp(y,design)
+
+#fit the general linear model
+fit <- glmQLFit(y, design)
+qlf <- glmQLFTest(fit, coef=2:6)
+
+#create a list of all expressed genes
+results <- topTags(qlf, n = 20000)
+
+# Extract the p-values from the 'toptags' result
+p_values <- results$table$PValue
+
+# Calculate q-values using the 'qvalue' function
+q_values <- qvalue(p_values)$qvalues
+
+# Add q-values to the 'toptags' result
+results$table$qValue <- q_values
+
+#export the table with all that information
+de_genes <- results$table
+
+#merge with gene data
+de_genes$gene <- rownames(de_genes)
+results_genes <- merge(de_genes, annots, by.x = 'gene', by.y = 'SYMBOL')
+
+#filter for q value and write csv
+results_genes_sig <- results_genes[results_genes$qValue < 0.05,]
+dateiname <- 'a-ens-all.csv'
+write.csv(results_genes_sig, file = dateiname)
