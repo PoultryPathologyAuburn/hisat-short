@@ -87,7 +87,7 @@ fit <- glmQLFit(y, design)
 qlf <- glmQLFTest(fit, coef=2:6)
 
 #create a list of all expressed genes
-results <- topTags(qlf, n = 20000)
+results <- topTags(qlf, n = inf)
 
 # Extract the p-values from the 'toptags' result
 p_values <- results$table$PValue
@@ -226,7 +226,7 @@ fit <- glmQLFit(y, design)
 qlf <- glmQLFTest(fit, coef=2:6)
 
 #create a list of all expressed genes
-results <- topTags(qlf, n = 20000)
+results <- topTags(qlf, n = inf)
 
 # Extract the p-values from the 'toptags' result
 p_values <- results$table$PValue
