@@ -1,0 +1,317 @@
+# libraries
+library(dplyr)
+library(goseq)
+library(BiasedUrn)
+library(geneLenDataBase)
+library(limma)
+library(edgeR)
+library(AnnotationDbi)
+library(stats4)
+library(BiocGenerics)
+library(org.Gg.eg.db)
+library(tibble)
+library(ggpubr)
+library(BiocManager)
+library(ggplot2)
+library(qvalue)
+library(gdata)
+
+##############
+#ncbi dataset#
+##############
+
+#create annotations
+uniKeys <- keys(org.Gg.eg.db, keytype="ENTREZID")
+cols <- c("SYMBOL", "GENENAME")
+annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
+
+# set path to files and list filenames
+path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ncbi/A"
+setwd(path)
+files <- list.files(path,".txt", full.names = T)
+
+# making a list of data frames with row and column names while removing last 
+# five lines from HTSeq that contains the features and ambiguous read infromation
+dfList <- lapply(files, function(x) {
+  read.csv(x, nrows = length(count.fields(x))-5, sep = "\t", header = F, 
+           row.names = 1, col.names = c("genes",tools::file_path_sans_ext(basename(x))))})
+
+# combining all the dataframes into single dataframe
+all.data <- bind_cols(dfList)
+
+## clean the column names from e.g. count_sorted_B_2 to B2
+names(all.data) = gsub(pattern = "count_sorted_", replacement = "", 
+                       x = names(all.data))
+names(all.data) = gsub(pattern = "_", replacement = "", x = names(all.data))
+
+#make genenames a column, remove the _1 and _2, add values in rows with same gene
+all.data$gene <- rownames(all.data)
+all.data$gene <- substr(all.data$gene, 1, nchar(all.data$gene)-2)
+all.data <- aggregate(. ~ gene, all.data, sum)
+row.names(all.data) <- all.data$gene
+all.data <- subset(all.data, select = -c(gene))
+
+#make group design
+target <- read.csv('phenodata.csv')
+group <- factor(paste(target$cocci_vac ,target$ST_vac ,sep="."))
+
+design <- model.matrix(~0+group)
+colnames(design) <- levels(group)
+
+#create DEGElist object
+y <- DGEList(counts = all.data, group = group)
+
+#check y
+y$samples
+levels(y$samples$group)
+
+# filter lowly expressed genes
+keep <- filterByExpr(y)
+y <- y[keep,,keep.lib.sizes=FALSE]
+sum_keep <- summary(keep)
+
+# normalization
+y <- calcNormFactors(y)
+
+#estimate dispersion
+y <- estimateDisp(y,design)
+
+#fit the model
+fit <- glmQLFit(y, design)
+
+#define the contrast(s)
+#my.contrasts <- makeContrasts(cocci.vs.stst = Cocci.vaccinated.No.ST.vaccine-No.cocci.vaccine.ST.vaccine.d.0.and.d.14, levels=design)
+
+#pairwise comparison according to contrast
+#qlf <- glmQLFTest(fit, contrast=my.contrasts[,'cocci.vs.stst'])
+
+#Compare all groups
+qlf <- glmQLFTest(fit)
+
+#to plot sign. changed genes, use plotMD on exact_test output, run the following two lines for each group
+plotMD(qlf)
+abline(h=c(-1, 1), col="blue")
+
+# Extract the log2 fold change and the adjusted p-values from the edgeR result
+logFC <- qlf$table$logFC
+pvalue <- qlf$table$PValue
+
+# Create a data frame for the volcano plot
+volcano_df <- data.frame(LogFC = logFC, PValue = pvalue)
+
+# Set the significance threshold (adjust as needed)
+significance_threshold <- 0.05
+
+# Create the volcano plot using ggplot2
+ggplot(volcano_df, aes(x = logFC, y = -log10(pvalue))) +
+  geom_point(color = ifelse(volcano_df$PValue < significance_threshold, "red", "black")) +
+  geom_hline(yintercept = -log10(significance_threshold), linetype = "dashed", color = "blue") +
+  labs(x = "Log2 Fold Change", y = "-log10(P-value)") +
+  ggtitle("Volcano Plot") +
+  theme_minimal()
+
+#create a list of all expressed genes
+results <- topTags(qlf, n = Inf)
+
+# add a column with Entrez ID to the topTags table
+results$table$Symbol <- mapIds(org.Gg.eg.db, rownames(results), keytype="SYMBOL", column="ENTREZID")
+
+#to prepare plotting of Pathways, start here:
+#divide toptags into two tables per ct12 etc. (one up, one down regulated according to Folchange >/< 0)
+out1 <- results$table
+out2 <- results$table
+DE.up_results <- out1[out1$logFC > 0, ]
+DE.down_results <- out2[out2$logFC < 0, ]
+
+# GO Pathway enrichment
+GO_up <- goana(DE.up_results$Symbol,  species="Gg")
+GO_down <- goana(DE.down_results$Symbol,  species="Gg")
+
+#adjust gaoana p-values:
+GO_up <- GO_up %>%  rownames_to_column("goid") %>%
+  as_tibble() %>%  mutate(GeneRatio = DE/N) %>%  dplyr::filter(DE > 0) %>%
+  arrange(P.DE) %>%  mutate(adjP = p.adjust(P.DE, "fdr"))
+GO_down <- GO_down %>%  rownames_to_column("goid") %>%
+  as_tibble() %>%  mutate(GeneRatio = DE/N) %>%  dplyr::filter(DE > 0) %>%
+  arrange(P.DE) %>%  mutate(adjP = p.adjust(P.DE, "fdr"))
+
+#kick out everything with adjP > 0.05
+GO_up <- GO_up[!(GO_up$adjP>=0.05),]
+GO_down <- GO_down[!(GO_down$adjP>=0.05),]
+
+#take top 50 (or whichevever you like) Pathways (lowest adjP) for plotting
+plotGO_up <- topGO(GO_up, n=50)
+write.csv(plotGO_up, "ncbi_50_up.csv")
+
+plotGO_down <- topGO(GO_down, n=50)
+write.csv(plotGO_down, "ncbi_50_down.csv")
+
+#plotting the enriched pathways
+GO_plot_up <- ggplot(data = plotGO_up, aes(x = GeneRatio, y = Term, 
+                                                                   color = `adjP`, size = DE)) + 
+  geom_point() +  scale_color_gradient(low = "red", high = "blue") +
+  theme_bw() + ylab("") + xlab("") + ggtitle("GO enrichment analysis")
+GO_plot_up
+
+GO_plot_down <- ggplot(data = plotGO_down, aes(x = GeneRatio, y = Term, 
+                                                                       color = `adjP`, size = DE)) + 
+  geom_point() +  scale_color_gradient(low = "red", high = "blue") +
+  theme_bw() + ylab("") + xlab("") + ggtitle("GO enrichment analysis")
+GO_plot_down
+
+##################
+#ensemble dataset#
+##################
+rm(list = ls())
+
+#create the symbol list: load gtf file
+path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ens"
+setwd(path)
+genlist <- read.delim('galgal_ens.gtf', sep = '\t', header = FALSE)
+
+#create the symbol list: select genes
+genlist <- genlist[genlist$V3 == 'gene',]
+
+#create the symbol list: select v9 with the relevant data and an id
+genlist$id <- row.names(genlist)
+genlist <- genlist[c(9, 10)]
+
+#create the symbol list: split with ; as separator
+splitvalue <- strsplit(genlist$V9, ';')
+
+#create the symbol list: assemble the new dataframe
+genlist <- data.frame(ID = rep(genlist$id, sapply(splitvalue, length)), Values = unlist(splitvalue))
+
+#create the symbol list: filter the rows with gene names or the ens gene ids and merge to one table
+filtered_data <- genlist[startsWith(genlist$Values, "gene_n", trim = TRUE), ]
+filtered_data_2 <- genlist[startsWith(genlist$Values, "gene_id"), ]
+genlist <- merge(filtered_data, filtered_data_2, by.x = 'ID', by.y = 'ID')
+
+#create the symbol list: remove unnecessary text
+genlist$Values.x <- gsub("gene_name","",as.character(genlist$Values.x))
+genlist$Values.y <- gsub("gene_id","",as.character(genlist$Values.y))
+genlist$Values.y <- trimws(genlist$Values.y)
+genlist$Values.x <- trimws(genlist$Values.x)
+
+#clean up
+rm(filtered_data)
+rm(filtered_data_2)
+rm(splitvalue)
+
+#create annotations
+uniKeys <- keys(org.Gg.eg.db, keytype="ENTREZID")
+cols <- c("SYMBOL", "GENENAME")
+annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
+
+# set path to files and list filenames
+path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ens/A"
+setwd(path)
+files <- list.files(path,".txt", full.names = T)
+
+# making a list of data frames with row and column names while removing last 
+# five lines from HTSeq that contains the features and ambiguous read infromation
+dfList <- lapply(files, function(x) {
+  read.csv(x, nrows = length(count.fields(x))-5, sep = "\t", header = F, 
+           row.names = 1, col.names = c("genes",tools::file_path_sans_ext(basename(x))))})
+
+# combining all the dataframes into single dataframe
+all.data <- bind_cols(dfList)
+
+## clean the column names from e.g. count_sorted_B_2 to B2
+names(all.data) = gsub(pattern = "count_sorted_", replacement = "", 
+                       x = names(all.data))
+names(all.data) = gsub(pattern = "_", replacement = "", x = names(all.data))
+
+#make genenames a column, replace with genenames if approp.
+all.data$gene <- rownames(all.data)
+all.data <- merge(all.data, genlist, by.x = 'gene', by.y = 'Values.y', all.x = TRUE)
+
+for (i in 1:nrow(all.data)) {
+  if (is.na(all.data[i,63])) {
+    all.data[i,63] <- all.data[i,1]
+  }
+}
+
+all.data <- subset(all.data, select = -c(gene, ID))
+all.data <- aggregate(. ~ Values.x, all.data, sum)
+row.names(all.data) <- all.data$Values.x
+all.data <- subset(all.data, select = -c(Values.x))
+
+#make group design
+target <- read.csv('phenodata.csv')
+group <- factor(paste(target$cocci_vac ,target$ST_vac ,sep="."))
+
+design <- model.matrix(~0+group)
+colnames(design) <- levels(group)
+
+#create DEGElist object
+y <- DGEList(counts = all.data, group = group)
+
+#check y
+y$samples
+levels(y$samples$group)
+
+# filter lowly expressed genes
+keep <- filterByExpr(y)
+y <- y[keep,,keep.lib.sizes=FALSE]
+sum_keep <- summary(keep)
+
+# normalization
+y <- calcNormFactors(y)
+
+#estimate dispersion
+y <- estimateDisp(y,design)
+
+#fit the model
+fit <- glmQLFit(y, design)
+qlf <- glmQLFTest(fit, coef=2:6)
+
+#get all genes
+results <- topTags(qlf, n = 20000)
+
+# Extract the p-values from the 'toptags' result
+p_values <- results$table$PValue
+
+# Calculate q-values using the 'qvalue' function
+q_values <- qvalue(p_values)$qvalues
+
+# Add q-values to the 'toptags' result
+results$table$qValue <- q_values
+
+#export the table with all that information
+de_genes <- results$table
+
+#define the contrast(s)
+my.contrasts <- makeContrasts(cocci.vs.stst = Cocci.vaccinated.No.ST.vaccine-No.cocci.vaccine.ST.vaccine.d.0.and.d.14, levels=design)
+
+#pairwise comparison according to contrast
+qlf <- glmQLFTest(fit, contrast=my.contrasts[,'cocci.vs.stst'])
+
+#to plot sign. changed genes, use plotMD on exact_test output, run the following two lines for each group
+plotMD(qlf)
+abline(h=c(-1, 1), col="blue")
+
+# Extract the log2 fold change and the adjusted p-values from the edgeR result
+logFC <- qlf$table$logFC
+pvalue <- qlf$table$PValue
+
+# Create a data frame for the volcano plot
+volcano_df <- data.frame(LogFC = logFC, PValue = pvalue)
+
+# Set the significance threshold (adjust as needed)
+significance_threshold <- 0.05
+
+# Create the volcano plot using ggplot2
+ggplot(volcano_df, aes(x = logFC, y = -log10(pvalue))) +
+  geom_point(color = ifelse(volcano_df$PValue < significance_threshold, "red", "black")) +
+  geom_hline(yintercept = -log10(significance_threshold), linetype = "dashed", color = "blue") +
+  labs(x = "Log2 Fold Change", y = "-log10(P-value)") +
+  ggtitle("Volcano Plot") +
+  theme_minimal()
+
+# top gene has a large (negative) log2-fold-change, showing that it is far 
+# more (highly) expressed in group than control
+top_DA <- topTags(qlf, n=Inf, adjust.method = "BH")
+
+# remove all rows where there is no EntrezID (column name "Symbol")
+clean_top_DA <- top_DA[!is.na(top_DA$table$Symbol),]
