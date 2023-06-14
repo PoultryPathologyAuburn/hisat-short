@@ -26,7 +26,7 @@ cols <- c("SYMBOL", "GENENAME")
 annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
 
 # set path to files and list filenames
-path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ncbi/A"
+path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ncbi/A" #change for NDV
 setwd(path)
 files <- list.files(path,".txt", full.names = T)
 
@@ -79,10 +79,10 @@ y <- estimateDisp(y,design)
 #fit the model
 fit <- glmQLFit(y, design)
 
-#define the contrast(s)
+#define the contrast(s) #edit for other contrasts
 #my.contrasts <- makeContrasts(cocci.vs.stst = Cocci.vaccinated.No.ST.vaccine-No.cocci.vaccine.ST.vaccine.d.0.and.d.14, levels=design)
 
-#pairwise comparison according to contrast
+#pairwise comparison according to contrast #edit for other contrasts
 #qlf <- glmQLFTest(fit, contrast=my.contrasts[,'cocci.vs.stst'])
 
 #Compare all groups
@@ -204,7 +204,7 @@ cols <- c("SYMBOL", "GENENAME")
 annots <- AnnotationDbi::select(org.Gg.eg.db, keys = uniKeys, columns = cols, keytype = 'ENTREZID')
 
 # set path to files and list filenames
-path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ens/A"
+path <- "C:/Users/ruedi/Box/Documents/jack/edgeRoutputs/ens/A" #change for NDV
 setwd(path)
 files <- list.files(path,".txt", full.names = T)
 
@@ -262,12 +262,17 @@ y <- calcNormFactors(y)
 #estimate dispersion
 y <- estimateDisp(y,design)
 
+#define the contrast(s) #edit for other contrasts
+#my.contrasts <- makeContrasts(cocci.vs.stst = Cocci.vaccinated.No.ST.vaccine-No.cocci.vaccine.ST.vaccine.d.0.and.d.14, levels=design)
+
+#pairwise comparison according to contrast #edit for other contrasts
+#qlf <- glmQLFTest(fit, contrast=my.contrasts[,'cocci.vs.stst'])
+
 #fit the model
 fit <- glmQLFit(y, design)
-qlf <- glmQLFTest(fit, coef=2:6)
 
 #get all genes
-results <- topTags(qlf, n = 20000)
+results <- topTags(qlf, n = inf)
 
 # Extract the p-values from the 'toptags' result
 p_values <- results$table$PValue
