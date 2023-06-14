@@ -18,7 +18,7 @@ pheno_data = read.csv('phenodata.csv')
 pheno_data = pheno_data[order(pheno_data$ids),]
 
 #create ballgown object
-aens = ballgown(dataDir = 'output', samplePattern = 'a-ens_', pData=pheno_data)
+aens = ballgown(dataDir = 'output', samplePattern = 'a-ens_', pData=pheno_data) #change input directory for Jannis' data
 
 #Filter to remove low-abundance genes
 aens_filt = subset(aens,"rowVars(texpr(aens)) >1",genomesubset=TRUE)
